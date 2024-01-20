@@ -1,0 +1,65 @@
+import bpy
+import random
+import mathutils
+import math
+import csv
+
+with open('/var/home/rose/shapes/shapeData.csv', 'w', newline='') as csvfile:
+    
+    csv_writer = csv.writer(csvfile)
+    csv_writer.writerow(['Image Index', 'Has Cube', 'Has Cone', 'Has Cylinder'])  # Writing the header
+
+    def setup_camera():
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.select_by_type(type='CAMERA')
+        cameras = bpy.context.selected_objects
+        if len(cameras) > 1:
+            for cam in cameras[1:]:
+                bpy.data.objects.remove(cam)
+        
+        if len(cameras) == 0:
+            bpy.ops.object.camera_add(location=(0, -8, 4))
+        
+        camera = [obj for obj in bpy.data.objects if obj.type == 'CAMERA'][0]
+        bpy.context.scene.camera = camera
+        return camera
+
+    def check_intersection(new_location, existing_location, min_distance=1.5):
+        distance = (new_location - existing_location).length
+        return distance < min_distance
+
+    counter = 0
+    deleted_objects = []
+
+    amount = 400
+    for i in range(amount):
+        print(str(i) + "/" + str(amount))
+        camera = setup_camera()
+        
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.select_by_type(type='MESH')
+        bpy.ops.object.delete()
+
+        has_cube = 0
+        has_cone = 0
+        has_cylinder = 0
+
+        existing_locations = []
+        centers = []
+        bool_list = [random.choice([True, False]) for _ in range(3)]
+
+        for j, shape in enumerate(["Cube", "Cone", "Cylinder"]):
+            if bool_list[j]:
+                attempts = 0
+                while attempts < 10:
+                    x = random.uniform(-1, 1)
+                    y = random.uniform(-4, -2)
+                    z = random.uniform(2, 4)
+                    new_location = mathutils.Vector((x, y, z))
+                    
+                    if all(not check_intersection(new_location, existing_location) for existing_location in existing_locations):
+                        centers.append(new_location)
+                        existing_locations.append(new_location)
+                        break
+                    
+                    attempts += 1
